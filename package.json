@@ -1,0 +1,29 @@
+{
+  "name": "crypto-basic",
+  "version": "1.0.0",
+  "description": "Atix Assessment on blockchain technology",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon index"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Johnvict/crypto-basic.git"
+  },
+  "keywords": [
+    "Blockchain"
+  ],
+  "author": "Johnvict O. Olamibo",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Johnvict/crypto-basic/issues"
+  },
+  "homepage": "https://github.com/Johnvict/crypto-basic#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  }
+}

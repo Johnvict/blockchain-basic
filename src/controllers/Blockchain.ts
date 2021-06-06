@@ -1,70 +1,85 @@
 import * as crypto from "crypto";
 import { MessageBlock } from "../interfaces/interface";
+import { logger } from "./class-exporter";
+import { Logger } from "./Logger";
 
 export class Blockchain {
-  message = "random";
-  lastBlock: MessageBlock = {
-    hash: Array(65).join('0'),  // To create an initial random hash made up of 64 zeros
-    message: 'random',
-    nonce: 0
-  };
-  blocks: any[] = [];
+  private logger: Logger = logger;
+  private message: string = '';
+  private mostRecentBlock: MessageBlock = { hash: "", message: "", nonce: 0 };
 
   constructor() {
-    console.log("Blockchain CONSTRUCTOR is called:", this.lastBlock);
+    console.log("BLOCKCHAIN CLASS IS INSTANTIATED");
     this.onInit();
   }
 
   /**
    * ! This function initializes the initial hash. It is called WHEN OUR APP STARTS
-   * ! So it never gets called again until the next app restarts
-   * 
+   * ! So it never gets called again until next "app restart"
+   *
    * TODO -------------------------------------------------------------
    * We might want to avoid this behaviour in a real life scenario
-   * because we only want this to happen when OUR APP runs for the 
-   * first time ONLY in "forever". Therefore, we would always want to
-   * check our log file first, to know if there is a previous hash 
+   * because we only want this to happen when OUR APP starts to run.
+   * Therefore, we would always want to check our log file first,
+   * to know if there is a previous hash then we save it in memory till
+   * next restart again when we'll redo this operation to get last log
    * TODO -------------------------------------------------------------
-   * @returns Function
-   * 
    */
-  async onInit() {
-    console.log("onInit CALLED")
-    return this.logBlock(true);
+  private async onInit() {
+    console.log("onInit CALLED");
+    logger.getLastBlock.then(val => this.mostRecentBlock = val)
   }
+
+  processMessageLog(req, res, next) {
+    this.message = req.body.message;
+    
+    if (!this.mostRecentBlock.hash) this.onInit()
+    this.logBlock().then(async () => {
+        this.mostRecentBlock = await this.logger.getLastBlock; // will still change
+      })
+      .then(() => {
+        // const hash = this.blocks;
+        return res.json({
+          status: "OK",
+          code: "00",
+          message: "Data has been logged successfully"
+        });
+      });
+  }
+
 
   /**
    * This method handles writing data into our log file
    * @param isInitial (Boolean) - To specify if this is a call from the initial app start
-   * @returns 
+   * @returns
    */
-  async logBlock(isInitial?: boolean) {
-    const saveToFIle = () => {
-      // TODO - Log data into csv file
-      this.blocks.push(this.lastBlock);
-    }
-    if (isInitial) return saveToFIle();
-    return this.hashMessage().then((hash) => saveToFIle());
+  private async logBlock() {
+    // Hash the message then call Logger to log it into csv file
+    return this.hashMessage().then( _ => this.logger.writeNewBlock = this.mostRecentBlock);    
   }
 
   /**
    * This method computes our hash
    * @returns Promise<MessageBlock | Error>
    */
-  hashMessage(): Promise<MessageBlock | Error> {
+  private hashMessage(): Promise<MessageBlock | Error> {
     return new Promise((resolve, reject) => {
       const computeHash = (nonce) => {
         let hash = crypto
           .createHash("sha256")
-          .update(`${this.lastBlock.hash},${this.message},${nonce}`, "utf8")
+          .update(`${this.mostRecentBlock.hash},${this.message},${nonce}`, "utf8")
           .digest("hex")
           .toString();
 
-          // Validate hash before we finally log it
+        // Let us ne sure if our hash is valid before we finally log it
         if (this.hashIsValid(hash)) {
-          console.log("We got a valid had now:", `${hash},${this.lastBlock.message},${nonce}`)
-          this.lastBlock =  {hash, message: this.message, nonce};
-          return resolve(this.lastBlock);
+          console.log("We got a valid hash now:", `${hash},${this.mostRecentBlock.message},${nonce}`);
+          
+          // We want to keep this in memory so that we can reuse it next time when another request comes
+          // If it is not found in memory, we can be sure that we'll fetch it again from our log file
+          this.mostRecentBlock = { hash, message: this.message, nonce };
+
+          return resolve(this.mostRecentBlock);
         }
 
         process.nextTick(function () {
@@ -76,21 +91,8 @@ export class Blockchain {
     });
   }
 
-  hashIsValid(hash: string) {
+  private hashIsValid(hash: string) {
     return hash.substring(0, 2) === "00";
   }
 
-  returnSomething(req, res, next) {
-    this.message = req.body.message;   
-    this.logBlock()
-      .then(() => {
-        // TODO - Get the last block from our csv file then use it
-        this.lastBlock = this.lastBlock // will still change
-      })
-
-      .then(() => {
-        const hash = this.blocks;
-        return res.json({ hash, length: hash.length });
-      });
-  }
 }

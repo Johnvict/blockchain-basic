@@ -21,11 +21,22 @@ export class Logger {
   get getLastBlock(): Promise<MessageBlock> {
     return new Promise((resolve, reject) => {
       let lastBlockLoaded: MessageBlock;
+      if (!fs.existsSync(this.fileName)) {
+        lastBlockLoaded = {
+          hash: Array(65).join("0"),
+          message: "random",
+          nonce: 0,
+        };
+
+        console.log("No previous log data found, we'll initialize this:", lastBlockLoaded);
+        return this.writeToFile(lastBlockLoaded).then((_) => resolve(lastBlockLoaded));
+      }
       fs.createReadStream(this.fileName)
         .pipe(csv())
         .on("data", (row) => lastBlockLoaded = row)
         .on("end", () => {
-          console.log("Last Block loaded", lastBlockLoaded);
+          console.log("Last Block loaded");
+          console.table(lastBlockLoaded);
           if (!lastBlockLoaded) {
             //   WE DID NOT HAVE A LOG YET, SO WE WRITE A DEFAULT LOG
             lastBlockLoaded = {
@@ -34,7 +45,7 @@ export class Logger {
               nonce: 0,
             };
 
-            console.log(lastBlockLoaded);
+            console.log("No previous log data found, we'll initialize this:", lastBlockLoaded);
             this.writeToFile(lastBlockLoaded).then((_) => resolve(lastBlockLoaded));
           } else {
             return resolve(lastBlockLoaded);
@@ -74,9 +85,9 @@ export class Logger {
     let rows,
       fileName = this.fileName;
 
-    // If file doesn't exist, we will create new file and add rows with headers.
-    if (!fs.existsSync(this.fileName)) {
-      rows = this.json2csv([data], { header: true });
+      // If file doesn't exist, we will create new file and add rows with headers.
+      if (!fs.existsSync(this.fileName)) {
+        rows = this.json2csv([data], { header: true });
     } else {
       // Rows without headers.
       rows = this.json2csv([data], { header: false });

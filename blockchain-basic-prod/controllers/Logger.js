@@ -28,6 +28,7 @@ class Logger {
      * @returns Promise<MessageBlock>
      */
     get getLastBlock() {
+        console.log("GET LAST BLOCK IS BEING CALLED");
         return new Promise((resolve, reject) => {
             let lastBlockLoaded;
             if (!fs_1.default.existsSync(this.fileName)) {

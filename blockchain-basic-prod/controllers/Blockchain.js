@@ -34,7 +34,7 @@ const class_exporter_1 = require("./class-exporter");
 class Blockchain {
     constructor() {
         this.logger = class_exporter_1.logger;
-        this.message = '';
+        this.message = "";
         this.mostRecentBlock = { hash: "", message: "", nonce: 0 };
         console.log("BLOCKCHAIN CLASS IS INSTANTIATED");
         this.onInit();
@@ -47,29 +47,29 @@ class Blockchain {
      * We might want to avoid this behaviour in a real life scenario
      * because we only want this to happen when OUR APP starts to run.
      * Therefore, we would always want to check our log file first,
-     * to know if there is a previous hash then we save it in memory till
+     * to know if there is a previous hash then we save it in A CACHE SUCH AS REDIS till
      * next restart again when we'll redo this operation to get last log
      * TODO -------------------------------------------------------------
      */
     onInit() {
         return __awaiter(this, void 0, void 0, function* () {
             console.log("onInit CALLED");
-            class_exporter_1.logger.getLastBlock.then(val => this.mostRecentBlock = val);
+            class_exporter_1.logger.getLastBlock.then((val) => (this.mostRecentBlock = val));
         });
     }
     processMessageLog(req, res, next) {
-        this.message = req.body.message;
-        if (!this.mostRecentBlock.hash)
-            this.onInit();
-        this.logBlock().then(() => __awaiter(this, void 0, void 0, function* () {
-            this.mostRecentBlock = yield this.logger.getLastBlock; // will still change
-        }))
-            .then(() => {
-            // const hash = this.blocks;
+        return __awaiter(this, void 0, void 0, function* () {
+            this.message = req.body.message;
+            if (!this.mostRecentBlock.hash) {
+                console.log("LAST BLOCK NOT KNOWN");
+                this.onInit();
+            }
+            yield this.onInit();
+            yield this.logBlock();
             return res.json({
                 status: "OK",
                 code: "00",
-                message: "Data has been logged successfully"
+                message: "Data has been logged successfully",
             });
         });
     }
@@ -81,7 +81,7 @@ class Blockchain {
     logBlock() {
         return __awaiter(this, void 0, void 0, function* () {
             // Hash the message then call Logger to log it into csv file
-            return this.hashMessage().then(_ => this.logger.writeNewBlock = this.mostRecentBlock);
+            return this.hashMessage().then((_) => (this.logger.writeNewBlock = this.mostRecentBlock));
         });
     }
     /**

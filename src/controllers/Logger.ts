@@ -19,6 +19,7 @@ export class Logger {
    * @returns Promise<MessageBlock>
    */
   get getLastBlock(): Promise<MessageBlock> {
+    console.log("GET LAST BLOCK IS BEING CALLED");
     return new Promise((resolve, reject) => {
       let lastBlockLoaded: MessageBlock;
       if (!fs.existsSync(this.fileName)) {
